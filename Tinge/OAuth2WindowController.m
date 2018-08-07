@@ -166,7 +166,7 @@ volatile BOOL gCancel;
             _connection=nil;
             [self close];
         }else{
-            NSDictionary *userInfo;
+            NSDictionary *userInfo=nil;
             [self connection:connection
             didFailWithError:[NSError errorWithDomain:@"OAuth Error"
                                                  code:1

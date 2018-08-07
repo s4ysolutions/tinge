@@ -7,8 +7,8 @@
 //
 
 #import "TAppDelegate.h"
-#import <MASShortcut/MASShortcut.h>
-#import <MASShortcut/MASShortcutMonitor.h>
+#import "MASShortcut.h"
+#import "MASShortcutMonitor.h"
 #import "ScreenshotWindow.h"
 //#import "PresentationManager.h"
 //#import "ToolPaletteWindowController.h"

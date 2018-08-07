@@ -48,7 +48,7 @@
             startingLineNumber = "95"
             endingLineNumber = "95"
             landmarkName = "-selectOpenBrowser:"
-            landmarkType = "5">
+            landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
@@ -64,7 +64,7 @@
             startingLineNumber = "44"
             endingLineNumber = "44"
             landmarkName = "-initWithUploadStorage:"
-            landmarkType = "5">
+            landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
@@ -95,7 +95,7 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "101"
             endingLineNumber = "101"
-            landmarkName = "@implementation OAuth2WindowController"
+            landmarkName = "OAuth2WindowController"
             landmarkType = "3">
          </BreakpointContent>
       </BreakpointProxy>
@@ -127,7 +127,7 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "99"
             endingLineNumber = "99"
-            landmarkName = "@implementation OAuth2WindowController"
+            landmarkName = "OAuth2WindowController"
             landmarkType = "3">
          </BreakpointContent>
       </BreakpointProxy>
@@ -144,7 +144,7 @@
             startingLineNumber = "129"
             endingLineNumber = "129"
             landmarkName = "-doStartRequestCode:"
-            landmarkType = "5">
+            landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
@@ -160,7 +160,7 @@
             startingLineNumber = "138"
             endingLineNumber = "138"
             landmarkName = "-connection:didReceiveResponse:"
-            landmarkType = "5">
+            landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
@@ -176,7 +176,7 @@
             startingLineNumber = "145"
             endingLineNumber = "145"
             landmarkName = "-connection:didReceiveData:"
-            landmarkType = "5">
+            landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
@@ -192,7 +192,7 @@
             startingLineNumber = "155"
             endingLineNumber = "155"
             landmarkName = "-connectionDidFinishLoading:"
-            landmarkType = "5">
+            landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
@@ -208,7 +208,7 @@
             startingLineNumber = "187"
             endingLineNumber = "187"
             landmarkName = "-connection:didFailWithError:"
-            landmarkType = "5">
+            landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
@@ -320,7 +320,7 @@
             startingLineNumber = "127"
             endingLineNumber = "127"
             landmarkName = "-doStartRequestCode:"
-            landmarkType = "5">
+            landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
@@ -336,7 +336,7 @@
             startingLineNumber = "156"
             endingLineNumber = "156"
             landmarkName = "-connectionDidFinishLoading:"
-            landmarkType = "5">
+            landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
@@ -480,7 +480,7 @@
             startingLineNumber = "220"
             endingLineNumber = "220"
             landmarkName = "-validateUserInterfaceItem:"
-            landmarkType = "5">
+            landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
@@ -1104,7 +1104,7 @@
             startingLineNumber = "110"
             endingLineNumber = "110"
             landmarkName = "-selectCancel:"
-            landmarkType = "5">
+            landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
@@ -1120,7 +1120,7 @@
             startingLineNumber = "70"
             endingLineNumber = "70"
             landmarkName = "-checkCode:"
-            landmarkType = "5">
+            landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
@@ -1136,7 +1136,7 @@
             startingLineNumber = "79"
             endingLineNumber = "79"
             landmarkName = "-startTimer"
-            landmarkType = "5">
+            landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
@@ -1152,7 +1152,7 @@
             startingLineNumber = "78"
             endingLineNumber = "78"
             landmarkName = "-startTimer"
-            landmarkType = "5">
+            landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
@@ -1168,7 +1168,7 @@
             startingLineNumber = "112"
             endingLineNumber = "112"
             landmarkName = "-selectCancel:"
-            landmarkType = "5">
+            landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
@@ -1232,7 +1232,7 @@
             startingLineNumber = "197"
             endingLineNumber = "197"
             landmarkName = "-windowWillClose:"
-            landmarkType = "5">
+            landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
@@ -1328,7 +1328,7 @@
             startingLineNumber = "241"
             endingLineNumber = "241"
             landmarkName = "-setRunOnLaunch:"
-            landmarkType = "5">
+            landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
    </Breakpoints>
