@@ -95,7 +95,7 @@
     
     CGRect imageRect = {{0,0}, [self imageSize]};
     
-    CGInterpolationQuality q = NSImageInterpolationHigh;
+    CGInterpolationQuality q = (CGInterpolationQuality)NSImageInterpolationHigh;
     CGContextSetInterpolationQuality(context, q);
     
     CGContextDrawImage(context, imageRect, _image);
@@ -482,10 +482,16 @@ bail:
 - (void) exportToDropbox{
     [self exportToDropbox:self];
 }
+
+- (void)exportToClipboard {
+  [Pasteboard pasteImage:_image];
+}
+
+
 /*
-- (void) reexport{
-    [self exportToDropbox:self];
-}*/
+ - (void) reexport{
+ [self exportToDropbox:self];
+ }*/
 
 #pragma mark *** Key handling ***
 
@@ -494,67 +500,67 @@ bail:
 
 #pragma mark *** NSWindowDelegate Protocoal ***
 - (void)windowWillClose:(NSNotification *)notification{
-    [[EditorWindowController controllers] removeObject:self];
-    [PresentationManager editorDidClose];
-//    [ToolPaletteWindowController hide];
-    [self autorelease];
+  [[EditorWindowController controllers] removeObject:self];
+  [PresentationManager editorDidClose];
+  //    [ToolPaletteWindowController hide];
+  [self autorelease];
 }
 
 - (void)selectedToolDidChange:(NSNotification *)notification {
 }
 
 - (void)selectedColorDidChange:(NSNotification *)notification {
-    Tool* t=nil;
-    if (_activeTool){
-        t=_activeTool;
-        // you need to change color without affecting the recnt rtool
-//    }else if (_tools.count>0) {
-//        t=(Tool*)[_tools lastObject];
+  Tool* t=nil;
+  if (_activeTool){
+    t=_activeTool;
+    // you need to change color without affecting the recnt rtool
+    //    }else if (_tools.count>0) {
+    //        t=(Tool*)[_tools lastObject];
+  }
+  if (t){
+    CGColorRef c=[[ToolPaletteWindowController sharedToolPaletteController] selectedColor];
+    if (!CGColorEqualToColor(c,t.color)){
+      Tool* t0=[t copy];
+      [t setColor:c];
+      [self addEditedToolWithUndo:t original:t0];
+      [t0 release];
+      [imageView setNeedsDisplay:YES];
     }
-    if (t){
-        CGColorRef c=[[ToolPaletteWindowController sharedToolPaletteController] selectedColor];
-        if (!CGColorEqualToColor(c,t.color)){
-            Tool* t0=[t copy];
-            [t setColor:c];
-            [self addEditedToolWithUndo:t original:t0];
-            [t0 release];
-            [imageView setNeedsDisplay:YES];
-        }
-    }
+  }
 }
 
 - (void)windowDidBecomeKey:(NSNotification *)notification{
-    [ToolPaletteWindowController addToWindow:self.window withEditor:self];
+  [ToolPaletteWindowController addToWindow:self.window withEditor:self];
 
-    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(selectedToolDidChange:) name:ToolDidChangeNotification object:nil];
-    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(selectedColorDidChange:) name:ColorDidChangeNotification object:nil];
-    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(receiveDeleteNotification:) name:ToolShouldBeDeletedNotification object:nil];
+  [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(selectedToolDidChange:) name:ToolDidChangeNotification object:nil];
+  [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(selectedColorDidChange:) name:ColorDidChangeNotification object:nil];
+  [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(receiveDeleteNotification:) name:ToolShouldBeDeletedNotification object:nil];
 
 
-//    [self.window addChildWindow:[[ToolPaletteWindowController sharedToolPaletteController] window] ordered:NSWindowAbove];
+  //    [self.window addChildWindow:[[ToolPaletteWindowController sharedToolPaletteController] window] ordered:NSWindowAbove];
 }
 
 - (void)windowDidResignKey:(NSNotification *)notification {
-    [ToolPaletteWindowController removeFromWindow:self.window];
-    [[NSNotificationCenter defaultCenter] removeObserver:self name:ToolDidChangeNotification object:nil];
-    [[NSNotificationCenter defaultCenter] removeObserver:self name:ColorDidChangeNotification object:nil];
-    [[NSNotificationCenter defaultCenter] removeObserver:self name:ToolShouldBeDeletedNotification object:nil];
+  [ToolPaletteWindowController removeFromWindow:self.window];
+  [[NSNotificationCenter defaultCenter] removeObserver:self name:ToolDidChangeNotification object:nil];
+  [[NSNotificationCenter defaultCenter] removeObserver:self name:ColorDidChangeNotification object:nil];
+  [[NSNotificationCenter defaultCenter] removeObserver:self name:ToolShouldBeDeletedNotification object:nil];
 
-//    [self.window removeChildWindow:[[ToolPaletteWindowController sharedToolPaletteController] window]];
+  //    [self.window removeChildWindow:[[ToolPaletteWindowController sharedToolPaletteController] window]];
 }
 
 /*
-- (BOOL)validateUserInterfaceItem:(id <NSValidatedUserInterfaceItem>)item
-{
-    if (item.tag==1 || item.tag==2) {
-        return YES;
-    }
-    return [super validateUserInterfaceItem:item];
-}*/
+ - (BOOL)validateUserInterfaceItem:(id <NSValidatedUserInterfaceItem>)item
+ {
+ if (item.tag==1 || item.tag==2) {
+ return YES;
+ }
+ return [super validateUserInterfaceItem:item];
+ }*/
 
 - (NSUndoManager *)windowWillReturnUndoManager:(NSWindow *)sender
 {
-    return _undoManager;
+  return _undoManager;
 }
 
 @end

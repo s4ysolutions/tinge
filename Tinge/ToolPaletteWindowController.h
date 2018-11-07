@@ -42,6 +42,7 @@
 - (IBAction)selectColorYellowAction:(id)sender;
 - (IBAction)selectColorWhiteAction:(id)sender;
 
+- (IBAction)exportToClipboard:(id)sender;
 - (IBAction)exportToLocal:(id)sender;
 - (IBAction)exportToCloud:(id)sender;
 - (IBAction)exportToDropbox:(id)sender;

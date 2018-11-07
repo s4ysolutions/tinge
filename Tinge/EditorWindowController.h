@@ -15,6 +15,7 @@
 }
 +(EditorWindowController*)startEdit:(CGImageRef)image;
 -(EditorWindowController*)initWithImageRef:(CGImageRef)image;
+-(IBAction) exportToClipboard:(id)sender;
 -(IBAction) exportToLocal:(id)sender;
 -(IBAction) exportToDropbox:(id)sender;
 //-(void) reexport;

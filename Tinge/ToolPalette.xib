@@ -1,8 +1,9 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="5056" systemVersion="MLPostFactor V0.3" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none">
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="14460.30.1" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none">
     <dependencies>
-        <deployment defaultVersion="1060" identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="5056"/>
+        <deployment identifier="macosx"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="14460.30.1"/>
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
         <customObject id="-2" userLabel="File's Owner" customClass="ToolPaletteWindowController">
@@ -14,20 +15,20 @@
             </connections>
         </customObject>
         <customObject id="-1" userLabel="First Responder" customClass="FirstResponder"/>
-        <customObject id="-3" userLabel="Application"/>
-        <window title="Tinge" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" restorable="NO" hasShadow="NO" oneShot="NO" releasedWhenClosed="NO" showsToolbarButton="NO" visibleAtLaunch="NO" animationBehavior="default" id="F0z-JX-Cv5" customClass="ToolWindow">
+        <customObject id="-3" userLabel="Application" customClass="NSObject"/>
+        <window title="Tinge" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" restorable="NO" hasShadow="NO" releasedWhenClosed="NO" visibleAtLaunch="NO" animationBehavior="default" id="F0z-JX-Cv5" customClass="ToolWindow">
             <windowStyleMask key="styleMask" titled="YES" texturedBackground="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" topStrut="YES"/>
-            <rect key="contentRect" x="40" y="40" width="58" height="403"/>
+            <rect key="contentRect" x="40" y="40" width="58" height="458"/>
             <rect key="screenRect" x="0.0" y="0.0" width="1680" height="1028"/>
             <value key="minSize" type="size" width="58" height="458"/>
             <value key="maxSize" type="size" width="58" height="458"/>
             <view key="contentView" id="se5-gp-TjO">
-                <rect key="frame" x="0.0" y="0.0" width="58" height="403"/>
+                <rect key="frame" x="0.0" y="0.0" width="58" height="458"/>
                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                 <subviews>
                     <matrix verticalHuggingPriority="750" mode="list" allowsEmptySelection="NO" autosizesCells="NO" id="Tzg-8H-vHQ">
-                        <rect key="frame" x="2" y="181" width="54" height="222"/>
+                        <rect key="frame" x="2" y="236" width="54" height="222"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                         <size key="cellSize" width="54" height="54"/>
@@ -66,7 +67,7 @@
                         </cells>
                     </matrix>
                     <button id="UMf-jV-V9Q">
-                        <rect key="frame" x="2" y="125" width="54" height="54"/>
+                        <rect key="frame" x="2" y="180" width="54" height="54"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="color48" imagePosition="only" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="b8W-yZ-6Yu">
                             <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
@@ -76,8 +77,12 @@
                             <action selector="selectColorAction:" target="-2" id="0H2-Gd-sIK"/>
                         </connections>
                     </button>
+                    <box verticalHuggingPriority="750" boxType="separator" id="ShN-vw-zFf">
+                        <rect key="frame" x="2" y="172" width="54" height="5"/>
+                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                    </box>
                     <button id="dr3-xi-hiV">
-                        <rect key="frame" x="2" y="61" width="54" height="54"/>
+                        <rect key="frame" x="2" y="116" width="54" height="54"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="dropbox" imagePosition="only" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="XI0-8s-y1e">
                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
@@ -88,7 +93,7 @@
                         </connections>
                     </button>
                     <button id="Ap6-PZ-cUP">
-                        <rect key="frame" x="2" y="5" width="54" height="54"/>
+                        <rect key="frame" x="2" y="60" width="54" height="54"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="finder" imagePosition="only" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="dUE-b7-M9g">
                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
@@ -98,13 +103,17 @@
                             <action selector="exportToLocal:" target="-2" id="JIO-uO-sIv"/>
                         </connections>
                     </button>
-                    <box autoresizesSubviews="NO" verticalHuggingPriority="750" title="Box" boxType="separator" titlePosition="noTitle" id="ShN-vw-zFf">
-                        <rect key="frame" x="2" y="117" width="54" height="5"/>
+                    <button id="fkH-rz-fBk">
+                        <rect key="frame" x="2" y="4" width="54" height="54"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                        <color key="borderColor" white="0.0" alpha="0.41999999999999998" colorSpace="calibratedWhite"/>
-                        <color key="fillColor" white="0.0" alpha="0.0" colorSpace="calibratedWhite"/>
-                        <font key="titleFont" metaFont="system"/>
-                    </box>
+                        <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="clipboard" imagePosition="only" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="aj1-R0-kF8">
+                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                            <font key="font" metaFont="system"/>
+                        </buttonCell>
+                        <connections>
+                            <action selector="exportToClipboard:" target="-2" id="Hcz-Pk-HrQ"/>
+                        </connections>
+                    </button>
                 </subviews>
             </view>
             <contentBorderThickness minY="0.0" maxY="0.0"/>
@@ -169,6 +178,7 @@
         <image name="arrow48" width="48" height="36"/>
         <image name="black" width="24" height="16"/>
         <image name="blue" width="24" height="16"/>
+        <image name="clipboard" width="48" height="48"/>
         <image name="color48" width="41" height="47"/>
         <image name="dropbox" width="48" height="48"/>
         <image name="finder" width="48" height="48"/>

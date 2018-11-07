@@ -27,4 +27,5 @@
 - (CGSize)imageSize;
 - (void) exportToLocal;
 - (void) exportToDropbox;
+- (void) exportToClipboard;
 @end

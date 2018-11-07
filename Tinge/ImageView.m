@@ -221,8 +221,9 @@
     {
         [self delete:self];
     }
-    else
-    {
+    else if (kVK_ANSI_C == event.keyCode && event.modifierFlags & NSCommandKeyMask && event.modifierFlags & NSShiftKeyMask) {
+      [editorModel exportToClipboard];
+    }else{
         [super keyDown:event];
     }
 }

@@ -74,6 +74,7 @@
 		41E370F11D5CB8180067E0F8 /* yellow.png in Resources */ = {isa = PBXBuildFile; fileRef = 41E370EA1D5CB8180067E0F8 /* yellow.png */; };
 		41E370F51D5E262A0067E0F8 /* Tool.m in Sources */ = {isa = PBXBuildFile; fileRef = 41E370F41D5E262A0067E0F8 /* Tool.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
 		41E370F81D5E26540067E0F8 /* ToolArrow.m in Sources */ = {isa = PBXBuildFile; fileRef = 41E370F71D5E26540067E0F8 /* ToolArrow.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
+		41F94E0D219337A600F4DB72 /* clipboard.png in Resources */ = {isa = PBXBuildFile; fileRef = 41F94E0C219337A600F4DB72 /* clipboard.png */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -200,6 +201,7 @@
 		41E370F41D5E262A0067E0F8 /* Tool.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Tool.m; sourceTree = "<group>"; };
 		41E370F61D5E26540067E0F8 /* ToolArrow.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ToolArrow.h; sourceTree = "<group>"; };
 		41E370F71D5E26540067E0F8 /* ToolArrow.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ToolArrow.m; sourceTree = "<group>"; };
+		41F94E0C219337A600F4DB72 /* clipboard.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = clipboard.png; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -451,6 +453,7 @@
 		41E370C11D5C786A0067E0F8 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				41F94E0C219337A600F4DB72 /* clipboard.png */,
 				41DCEEA31D65812E00936A55 /* cloud.png */,
 				41DCEEA51D65816D00936A55 /* dropbox.png */,
 				41E370E41D5CB8180067E0F8 /* blue.png */,
@@ -596,6 +599,7 @@
 				41E370EB1D5CB8180067E0F8 /* blue.png in Resources */,
 				412046471D02E11D00AD3B75 /* MainMenu.xib in Resources */,
 				41E370EC1D5CB8180067E0F8 /* green.png in Resources */,
+				41F94E0D219337A600F4DB72 /* clipboard.png in Resources */,
 				419713F41D67FF71004B1FB6 /* OAuth2.xib in Resources */,
 				41E370DE1D5CB4220067E0F8 /* text48.png in Resources */,
 				41E370DB1D5CB4220067E0F8 /* tinge16x22.png in Resources */,

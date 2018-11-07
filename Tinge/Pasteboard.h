@@ -10,4 +10,5 @@
 
 @interface Pasteboard : NSObject
 +(void)pasteString:(NSString*) string;
++(void)pasteImage:(CGImageRef ) image;
 @end

@@ -340,4 +340,8 @@ static NSObject<EditorModel>* sEditor=nil;
 - (IBAction)exportToDropbox:(id)sender{
     [sEditor exportToDropbox];
 };
+- (IBAction)exportToClipboard:(id)sender{
+  [sEditor exportToClipboard];
+};
+
 @end

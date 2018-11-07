@@ -16,4 +16,15 @@
     [pasteboard declareTypes:[NSArray arrayWithObject:NSStringPboardType] owner:nil];
     [pasteboard setString:string forType:NSStringPboardType];
 }
+
++(void)pasteImage:(CGImageRef)image {
+  NSImage *nsImage = [[NSImage alloc] initWithCGImage:image size:NSZeroSize];
+  if (image != nil) {
+    NSPasteboard *pasteboard = [NSPasteboard generalPasteboard];
+    [pasteboard clearContents];
+    NSArray *copiedObjects = [NSArray arrayWithObject:nsImage];
+    [pasteboard writeObjects:copiedObjects];
+  }
+}
+
 @end
