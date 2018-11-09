@@ -330,6 +330,27 @@
 
 #pragma mark *** EditorModel Protocol - Export ***
 
+- (CGImageRef)getDrawnImage {
+  NSBitmapImageRep * bm = [imageView bitmapImageRepForCachingDisplayInRect:imageView.bounds];
+  [imageView cacheDisplayInRect:imageView.bounds toBitmapImageRep:bm];
+  //[imageView unlockFocus];
+
+  NSInteger     rowBytes, width, height;
+
+  rowBytes = [bm bytesPerRow];
+  width = [bm pixelsWide];
+  height = [bm pixelsHigh];
+  CGDataProviderRef provider = CGDataProviderCreateWithData( bm, [bm bitmapData], rowBytes * height, NULL );
+  CGColorSpaceRef colorspace = CGColorSpaceCreateWithName( kCGColorSpaceGenericRGB );
+  CGBitmapInfo    bitsInfo = (CGBitmapInfo)kCGImageAlphaPremultipliedLast;
+
+  CGImageRef drawnImage = CGImageCreate( width, height, 8, 32, rowBytes, colorspace, bitsInfo, provider, NULL, NO, kCGRenderingIntentDefault );
+  CGDataProviderRelease( provider );
+  CGColorSpaceRelease(colorspace);
+
+  return drawnImage;
+};
+
 - (BOOL)writeToURL:(NSURL *)absoluteURL ofType:(NSString *)typeName error:(NSError **)outError
 {
     BOOL status = NO;
@@ -380,27 +401,11 @@
     
     //[imageView lockFocus];
     [self deactiviteAllTools];
-    NSBitmapImageRep * bm = [imageView bitmapImageRepForCachingDisplayInRect:imageView.bounds];
-    [imageView cacheDisplayInRect:imageView.bounds toBitmapImageRep:bm];
-    //[imageView unlockFocus];
-    
-    NSInteger     rowBytes, width, height;
-    
-    rowBytes = [bm bytesPerRow];
-    width = [bm pixelsWide];
-    height = [bm pixelsHigh];
-    CGDataProviderRef provider = CGDataProviderCreateWithData( bm, [bm bitmapData], rowBytes * height, NULL );
-    CGColorSpaceRef colorspace = CGColorSpaceCreateWithName( kCGColorSpaceGenericRGB );
-    CGBitmapInfo    bitsInfo = (CGBitmapInfo)kCGImageAlphaPremultipliedLast;
-    
-    CGImageRef drawnImage = CGImageCreate( width, height, 8, 32, rowBytes, colorspace, bitsInfo, provider, NULL, NO, kCGRenderingIntentDefault );
-
+    CGImageRef drawnImage = [self getDrawnImage];
     CGImageDestinationAddImage(dest, drawnImage, NULL);
     
     status = CGImageDestinationFinalize(dest);
 //    CGContextRelease (context);
-    CGDataProviderRelease( provider );
-    CGColorSpaceRelease(colorspace);
     CGImageRelease(drawnImage);
     //[bm release];
 
@@ -484,7 +489,13 @@ bail:
 }
 
 - (void)exportToClipboard {
-  [Pasteboard pasteImage:_image];
+  [self deactiviteAllTools];
+  CGImageRef drawnImage = [self getDrawnImage];
+
+  [Pasteboard pasteImage:drawnImage];
+  CGImageRelease(drawnImage);
+
+  [self close];
 }
 
 
