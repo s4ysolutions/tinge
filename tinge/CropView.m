@@ -71,7 +71,7 @@
     }
     // CGContextClearRect (context, bounds);
     
-    CGColorRef color=CGColorCreateGenericRGB(0,0,0,0.25);
+    CGColorRef color=CGColorCreateGenericRGB(0,0,0,0.5);
     CGContextSetFillColorWithColor(context, color);
     CGColorRelease(color);
 
@@ -108,6 +108,12 @@
     
     if (n>0){
         CGContextFillRects(context,rects,n);
+        /* white border, so the edge of the selection is visible on dark content too */
+        CGColorRef border=CGColorCreateGenericRGB(1,1,1,0.9);
+        CGContextSetStrokeColorWithColor(context, border);
+        CGColorRelease(border);
+        CGContextSetLineWidth(context, 1);
+        CGContextStrokeRect(context, CGRectInset(CGRectMake(a0.x, a0.y, b0.x-a0.x, b0.y-a0.y), -0.5, -0.5));
     }else{
         CGContextFillRect(context, bounds);
     }

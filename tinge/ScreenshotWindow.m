@@ -11,26 +11,33 @@
 #import "ScreenshotView.h"
 
 @implementation ScreenshotWindow
-- (id)initWithCGImage:(CGImageRef)image  andDelegator:(NSObject<ScreenshotDelegator>*)delegator
+- (id)initWithCGImage:(CGImageRef)image  display:(CGDirectDisplayID)display andDelegator:(NSObject<ScreenshotDelegator>*)delegator
 {
-    NSRect screenRect = [[NSScreen mainScreen] frame];
+    NSScreen *screen = [NSScreen mainScreen];
+    for (NSScreen *candidate in [NSScreen screens]) {
+        NSNumber *number = [[candidate deviceDescription] objectForKey:@"NSScreenNumber"];
+        if ([number unsignedIntValue] == display) {
+            screen = candidate;
+        }
+    }
+    NSRect screenRect = [screen frame];
     //screenRect.size.height=screenRect.size.height/4;
     //screenRect.size.width=screenRect.size.width/4;
     
     self = [super initWithContentRect:screenRect
                             styleMask:NSBorderlessWindowMask
                               backing:NSBackingStoreBuffered
-                                defer:NO screen:[NSScreen mainScreen]];
+                                defer:NO screen:screen];
     
     if (self) {
         int windowLevel;
         
-        CGDisplayCapture( kCGDirectMainDisplay );
+        CGDisplayCapture( display );
 
         windowLevel = CGShieldingWindowLevel();
         
         
-        ScreenshotView *screenshotView=[[ScreenshotView alloc] initWithCGImage:image ];
+        ScreenshotView *screenshotView=[[ScreenshotView alloc] initWithCGImage:image display:display];
         [screenshotView setDelegator:delegator];
         
         [self setContentView: screenshotView];

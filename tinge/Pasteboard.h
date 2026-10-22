@@ -10,5 +10,5 @@
 
 @interface Pasteboard : NSObject
 +(void)pasteString:(NSString*) string;
-+(void)pasteImage:(CGImageRef ) image;
++(void)pasteImage:(CGImageRef ) image pointSize:(NSSize)size;
 @end

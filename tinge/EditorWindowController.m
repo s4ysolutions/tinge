@@ -12,6 +12,7 @@
 #import "UploadWindowController.h"
 #import "DropboxUploadStorage.h"
 #import "Pasteboard.h"
+#import "Constants.h"
 
 @interface EditorWindowController (){
 @private
@@ -19,10 +20,7 @@
     Tool* _activeTool;
     Tool* _pastedTool;
     CGImageRef _image;
-    CGImageRef _imageScaled;
     NSUndoManager* _undoManager;
-    CGContextRef _scaledContext;
-    float scale;
 }
 
 @end
@@ -55,26 +53,12 @@
         _tools=[[NSMutableArray alloc] init];
         [[EditorWindowController controllers] addObject:self];
         _undoManager=[[NSUndoManager alloc] init];
-        scale = [[NSScreen mainScreen] backingScaleFactor];
-        _scaledContext = CGBitmapContextCreate(
-                                               NULL,
-                                               CGImageGetWidth(_image) /  scale,
-                                               CGImageGetHeight(_image) / scale,
-                                               8,
-                                               0,
-                                               CGColorSpaceCreateWithName( kCGColorSpaceGenericRGB ),
-                                               (CGBitmapInfo)kCGImageAlphaPremultipliedLast);
-        CGContextSetInterpolationQuality(_scaledContext, kCGInterpolationHigh);
- //       CGContextSetShouldAntialias(_scaledContext, true);
- //      CGContextSetRGBStrokeColor(_scaledContext, 0.0, 0.0, 0.0, 0.0);
-//        CGContextScaleCTM(_scaledContext, 1 / scale, 1 / scale);
     }
     return self;
 };
 
 - (void)dealloc {
     CGImageRelease(_image);
-    CGContextRelease(_scaledContext);
     [_tools release];
     [_pastedTool release];
     [_undoManager release];
@@ -85,7 +69,7 @@
 - (void)windowDidLoad
 {
     [super windowDidLoad];
-    NSSize newSize = NSSizeFromCGSize([self imageScaledSize]);
+    NSSize newSize = NSSizeFromCGSize([self imageSize]);
     [imageView setFrameSize:newSize];
     if (newSize.width<100) newSize.width=100;
     if (newSize.height<50) newSize.height=50;
@@ -110,9 +94,9 @@
     if (_image==nil)
         return;
     
-    CGRect imageRect0 = {{0,0}, [self imageSize]};
-    CGRect imageRect = CGContextConvertRectToUserSpace(context, imageRect0);
-    
+    /* imageSize is already in points, the view's user space; no device-space conversion. */
+    CGRect imageRect = {{0,0}, [self imageSize]};
+
     CGInterpolationQuality q = (CGInterpolationQuality)NSImageInterpolationHigh;
     CGContextSetInterpolationQuality(context, q);
     
@@ -124,9 +108,6 @@
     }
     
    
-    CGImageRef image = CGBitmapContextCreateImage(context);
-    CGContextDrawImage(_scaledContext, imageRect, image);
-    CGImageRelease(image);
 };
 
 - (void) undoModified:(NSArray*)tools{
@@ -341,20 +322,10 @@
 {
     if (_image)
     {
-        return CGSizeMake(CGImageGetWidth(_image), CGImageGetHeight(_image));
+        CGFloat scale=TingePixelsPerPoint(CGMainDisplayID());
+        return CGSizeMake(CGImageGetWidth(_image)/scale, CGImageGetHeight(_image)/scale);
     }
-    
-    return CGSizeMake(0, 0);
-}
 
-- (CGSize)imageScaledSize
-{
-    if (_image)
-    {
-        float scale = [[NSScreen mainScreen] backingScaleFactor];
-        return CGSizeMake(CGImageGetWidth(_image) / scale, CGImageGetHeight(_image) / scale);
-    }
-    
     return CGSizeMake(0, 0);
 }
 
@@ -366,64 +337,24 @@
 #pragma mark *** EditorModel Protocol - Export ***
 
 - (CGImageRef)getDrawnImage {
-    /*
-    NSLog(@"image size: %f,%f %f,%f", imageView.bounds.origin.x,imageView.bounds.origin.y, imageView.bounds.size.width, imageView.bounds.size.height);
-    float scale = [[NSScreen mainScreen] backingScaleFactor];
-
-    NSRect bmRect = NSMakeRect(
-                               imageView.bounds.origin.x/scale,
-                               imageView.bounds.origin.y/scale,
-                               imageView.bounds.size.width/scale,
-                               imageView.bounds.size.height/scale);
-  NSBitmapImageRep * bm = [imageView bitmapImageRepForCachingDisplayInRect:bmRect];
-    CGContextRef graphicsContext = CGBitmapContextCreate(
-                                         [bm bitmapData],
-                                                 [bm pixelsWide],
-                                                 [bm pixelsHigh],
-                                                 8,
-                                                 [bm bytesPerRow],
-                                                 CGColorSpaceCreateWithName( kCGColorSpaceGenericRGB ),
-                                                 (CGBitmapInfo)kCGImageAlphaPremultipliedLast
-*/
-    /*
-  CGContextRef graphicsContext = CGBitmapContextCreate(
-                                       [bm bitmapData],
-                                               [bm pixelsWide],
-                                               [bm pixelsHigh],
-                                               8,
-                                               [bm bytesPerRow],
-                                               CGColorSpaceCreateWithName( kCGColorSpaceGenericRGB ),
-                                               (CGBitmapInfo)kCGImageAlphaPremultipliedLast
-  [NSGraphicsContext saveGraphicsState];
-  NSGraphicsContext *graphicsContext = [NSGraphicsContext graphicsContextWithBitmapImageRep:bm];
-  graphicsContext.imageInterpolation = NSImageInterpolationHigh;
-  //CGContextSetInterpolationQuality(graphicsContext, kCGInterpolationHigh);
-  [NSGraphicsContext setCurrentContext:graphicsContext];
-  CGContextScaleCTM(graphicsContext.CGContext, 1/scale, 1/scale);
-                                              );
-    */
-  //[imageView cacheDisplayInRect:imageView.bounds toBitmapImageRep:bm];
-  //[imageView displayRectIgnoringOpacity:imageView.bounds inContext:graphicsContext];
-  //[NSGraphicsContext restoreGraphicsState];
+  NSBitmapImageRep * bm = [imageView bitmapImageRepForCachingDisplayInRect:imageView.bounds];
+  [imageView cacheDisplayInRect:imageView.bounds toBitmapImageRep:bm];
   //[imageView unlockFocus];
-/*
+
   NSInteger     rowBytes, width, height;
 
   rowBytes = [bm bytesPerRow];
   width = [bm pixelsWide];
   height = [bm pixelsHigh];
   CGDataProviderRef provider = CGDataProviderCreateWithData( bm, [bm bitmapData], rowBytes * height, NULL );
+  CGColorSpaceRef colorspace = CGColorSpaceCreateWithName( kCGColorSpaceGenericRGB );
   CGBitmapInfo    bitsInfo = (CGBitmapInfo)kCGImageAlphaPremultipliedLast;
 
   CGImageRef drawnImage = CGImageCreate( width, height, 8, 32, rowBytes, colorspace, bitsInfo, provider, NULL, NO, kCGRenderingIntentDefault );
   CGDataProviderRelease( provider );
   CGColorSpaceRelease(colorspace);
-*/
-    //NSLog(@"exit d: %p",_scaledContext);
-    // TODO: ref leak
-    CGImageRef drawnImage =  CGBitmapContextCreateImage(_scaledContext);
-    //CGImageRef drawnImage = _imageScaled;//CGBitmapContextCreateImage(_scaledContext);
-    return drawnImage;
+
+  return drawnImage;
 };
 
 - (BOOL)writeToURL:(NSURL *)absoluteURL ofType:(NSString *)typeName error:(NSError **)outError
@@ -477,7 +408,12 @@
     //[imageView lockFocus];
     [self deactiviteAllTools];
     CGImageRef drawnImage = [self getDrawnImage];
-    CGImageDestinationAddImage(dest, drawnImage, NULL);
+    /* Tag the file with its size in points, so viewers show it at the on-screen size and not at 72 dpi. */
+    CGFloat pointWidth = imageView.bounds.size.width;
+    CGFloat dpi = pointWidth > 0 ? 72.0 * CGImageGetWidth(drawnImage) / pointWidth : 72.0;
+    NSDictionary *props = @{ (__bridge NSString *)kCGImagePropertyDPIWidth : @(dpi),
+                             (__bridge NSString *)kCGImagePropertyDPIHeight : @(dpi) };
+    CGImageDestinationAddImage(dest, drawnImage, (__bridge CFDictionaryRef)props);
     
     status = CGImageDestinationFinalize(dest);
 //    CGContextRelease (context);
@@ -568,7 +504,7 @@ bail:
   [self deactiviteAllTools];
   CGImageRef drawnImage = [self getDrawnImage];
 
-  [Pasteboard pasteImage:drawnImage];
+  [Pasteboard pasteImage:drawnImage pointSize:imageView.bounds.size];
   CGImageRelease(drawnImage);
 
   [self close];

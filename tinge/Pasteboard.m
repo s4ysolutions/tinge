@@ -18,13 +18,15 @@
     [pasteboard setString:string forType:NSStringPboardType];
 }
 
-+(void)pasteImage:(CGImageRef)image {
-  NSImage *nsImage = [[NSImage alloc] initWithCGImage:image size:NSZeroSize];
++(void)pasteImage:(CGImageRef)image pointSize:(NSSize)size {
   if (image != nil) {
+    /* size is in points; the CGImage holds the pixels, so pasted images keep the on-screen size. */
+    NSImage *nsImage = [[NSImage alloc] initWithCGImage:image size:size];
     NSPasteboard *pasteboard = [NSPasteboard generalPasteboard];
     [pasteboard clearContents];
     NSArray *copiedObjects = [NSArray arrayWithObject:nsImage];
     [pasteboard writeObjects:copiedObjects];
+    [nsImage release];
   }
 }
 

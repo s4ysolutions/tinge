@@ -83,7 +83,10 @@ static void DisplayRegisterReconfigurationCallback (CGDirectDisplayID display, C
     //if ([[[NSUserDefaults standardUserDefaults] objectForKey:@"showMenu"] intValue]==1){
         _statusItem = [[[NSStatusBar systemStatusBar] statusItemWithLength:16] retain];
         [_statusItem setMenu:_statusMenu];
-    [_statusItem setImage: [NSImage imageNamed:@"tingeMenu"]];//[[[NSImage alloc] initByReferencingFile:[[NSBundle mainBundle] pathForResource:@"tingeMenu" ofType:@"png"]] autorelease]];
+    NSImage *menuImage = [NSImage imageNamed:@"tingeMenu"];
+    /* template image: the menu bar tints it for light/dark mode like other items */
+    [menuImage setTemplate:YES];
+    [_statusItem setImage: menuImage];//[[[NSImage alloc] initByReferencingFile:[[NSBundle mainBundle] pathForResource:@"tingeMenu" ofType:@"png"]] autorelease]];
         [_statusItem setHighlightMode:YES];
 //        [NSApp setActivationPolicy:NSApplicationActivationPolicyAccessory];
 
@@ -175,10 +178,11 @@ static void DisplayRegisterReconfigurationCallback (CGDirectDisplayID display, C
 - (IBAction)makeScreenShot:(id)sender {
     if (_displaysCount==0)
         return;
-    CGImageRef image = CGDisplayCreateImage(_displays[[self currentDisplay]]);
+    CGDirectDisplayID display = _displays[[self currentDisplay]];
+    CGImageRef image = CGDisplayCreateImage(display);
     if (image)
     {
-        _screenshotWindow=[[ScreenshotWindow alloc] initWithCGImage:image andDelegator:self];
+        _screenshotWindow=[[ScreenshotWindow alloc] initWithCGImage:image display:display andDelegator:self];
         CGImageRelease(image);
         [[NSSound soundNamed:@"Hero"] play];
     }else{

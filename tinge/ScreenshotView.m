@@ -8,19 +8,20 @@
 
 #import "ScreenshotView.h"
 #import "CropView.h"
+#import "Constants.h"
 
 @implementation ScreenshotView {
 @private
     CGImageRef _image;
     CropView* _cropView;
     NSObject<ScreenshotDelegator>* _delegator;
-   // float scale;
+    CGFloat _scale;
 }
 
-- (id)initWithCGImage:(CGImageRef)anImage
+- (id)initWithCGImage:(CGImageRef)anImage display:(CGDirectDisplayID)display
 {
-    // scale = 1;
-    NSRect frame=NSMakeRect(0, 0, CGImageGetWidth(anImage), CGImageGetHeight(anImage));
+    _scale=TingePixelsPerPoint(display);
+    NSRect frame=NSMakeRect(0, 0, CGImageGetWidth(anImage)/_scale, CGImageGetHeight(anImage)/_scale);
     self = [super initWithFrame:frame];
     if (self) {
         _image = (CGImageRef)CFRetain(anImage);
@@ -55,11 +56,6 @@
         return;
     
     CGRect imageRect = [self frame];
-    /*
-    CGRect rd = CGContextConvertRectToDeviceSpace(context, imageRect);
-    scale = rd.size.width/imageRect.size.width;
-    NSLog(@"scale %f of %f,%f", scale, imageRect.size.width, rd.size.width);
-    */
     CGContextSetInterpolationQuality(context, kCGInterpolationHigh);
     
     CGContextDrawImage(context, imageRect, _image);
@@ -77,25 +73,16 @@
 
 - (void)screenshotWasCroppedWithA:(CGPoint) a andB:(CGPoint) b
 {
-    float scale = [[NSScreen mainScreen] backingScaleFactor];
-    NSLog(@"Mouse  %f,%f %f,%f",a.x, a.y, b.x, b.y);
-    a.x*=scale;
-    b.x*=scale;
-    a.y*=scale;
-    b.y*=scale;
-    NSLog(@"Mouse scaled by %f %f,%f %f,%f",scale, a.x, a.y, b.x, b.y);
-    CGRect rs = CGRectMake(a.x,
-                           (CGImageGetHeight(_image)-b.y),
-                           b.x-a.x,
-                           b.y-a.y);
+    CGRect rs = CGRectMake(a.x*_scale,
+                           CGImageGetHeight(_image)-b.y*_scale,
+                           (b.x-a.x)*_scale,
+                           (b.y-a.y)*_scale);
     
     CGImageRef cropped=CGImageCreateWithImageInRect(_image,rs);
-    NSLog(@"Screenshot size: %zu x %zu",CGImageGetWidth(_image), CGImageGetHeight(_image));
-    NSLog(@"Crop screenshot %f,%f %f,%f",rs.origin.x,rs.origin.y,rs.size.width,rs.size.height);
     if (cropped)
         [_delegator screenshot:_image wasCropped: cropped];
     else
-        NSLog(@"Can't crop screenshot %f,%f %f,%f",rs.origin.x,rs.origin.y,rs.size.width,rs.size.height);
+        NSLog(@"Can't crop screenshot %f,%f %f,%f",a.x,a.y,b.x-a.x,b.y-a.y);
     CGImageRelease(cropped);
 };
 

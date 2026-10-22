@@ -10,5 +10,5 @@
 #import "ScreenshotDelegator.h"
 
 @interface ScreenshotWindow : NSWindow <NSWindowDelegate>
-- (id)initWithCGImage:(CGImageRef)anImage andDelegator:(NSObject<ScreenshotDelegator>*)delegator;
+- (id)initWithCGImage:(CGImageRef)anImage display:(CGDirectDisplayID)display andDelegator:(NSObject<ScreenshotDelegator>*)delegator;
 @end

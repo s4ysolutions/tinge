@@ -12,7 +12,7 @@
 @interface ScreenshotView : NSView
 
 //@property(readonly) CropView* cropView;
-- (id)initWithCGImage:(CGImageRef)anImage;
+- (id)initWithCGImage:(CGImageRef)anImage display:(CGDirectDisplayID)display;
 - (void)screenshotWasCroppedWithA:(CGPoint) a andB:(CGPoint) b;
 - (void)setDelegator:(NSObject<ScreenshotDelegator> *)delegator;
 
