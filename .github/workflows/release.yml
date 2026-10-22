@@ -1,0 +1,340 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build, package and release
+    runs-on: macos-15
+    timeout-minutes: 60
+    permissions:
+      contents: write # needed to create the GitHub Release on tag pushes
+    env:
+      APP_NAME: Tinge
+      SCHEME: Tinge
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: |
+          if [ -d /Applications/Xcode_16.4.app ]; then
+            sudo xcode-select -s /Applications/Xcode_16.4.app
+          fi
+          xcodebuild -version
+
+      - name: Set version and paths
+        env:
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+          RUN_NUMBER: ${{ github.run_number }}
+        run: |
+          set -euo pipefail
+          if [ "$REF_TYPE" = "tag" ]; then
+            if ! [[ "$REF_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.-]+)?$ ]]; then
+              echo "::error::Tag '$REF_NAME' is not like v1.2.3 or v1.2.3-rc1"
+              exit 1
+            fi
+            VERSION="${REF_NAME#v}"
+          else
+            VERSION="0.0.0-dev"
+          fi
+          WORK_DIR="$RUNNER_TEMP/tinge-release"
+          {
+            echo "VERSION=$VERSION"
+            echo "BUILD_NUMBER=$RUN_NUMBER"
+            echo "WORK_DIR=$WORK_DIR"
+            echo "DIST_DIR=$WORK_DIR/dist"
+          } >> "$GITHUB_ENV"
+          echo "Version $VERSION, build $RUN_NUMBER"
+
+      - name: Choose signing mode
+        env:
+          MACOS_CERTIFICATE_P12: ${{ secrets.MACOS_CERTIFICATE_P12 }}
+          MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          NOTARY_KEY_P8: ${{ secrets.NOTARY_KEY_P8 }}
+          NOTARY_KEY_ID: ${{ secrets.NOTARY_KEY_ID }}
+          NOTARY_ISSUER_ID: ${{ secrets.NOTARY_ISSUER_ID }}
+        run: |
+          set -euo pipefail
+          SIGNED=true
+          for name in MACOS_CERTIFICATE_P12 MACOS_CERTIFICATE_PASSWORD APPLE_TEAM_ID \
+                      NOTARY_KEY_P8 NOTARY_KEY_ID NOTARY_ISSUER_ID; do
+            if [ -z "${!name}" ]; then
+              echo "Secret $name is missing."
+              SIGNED=false
+            fi
+          done
+          echo "SIGNED=$SIGNED" >> "$GITHUB_ENV"
+          if [ "$SIGNED" = true ]; then
+            echo "Signing mode: Developer ID signing + notarization"
+          else
+            echo "::warning::Signing secrets are missing. Building an unsigned (ad-hoc signed) app."
+          fi
+
+      - name: Import signing certificate
+        if: env.SIGNED == 'true'
+        env:
+          MACOS_CERTIFICATE_P12: ${{ secrets.MACOS_CERTIFICATE_P12 }}
+          MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+          NOTARY_KEY_P8: ${{ secrets.NOTARY_KEY_P8 }}
+          NOTARY_KEY_ID: ${{ secrets.NOTARY_KEY_ID }}
+        run: |
+          set +x
+          set -euo pipefail
+          KEYCHAIN_PATH="$RUNNER_TEMP/tinge-signing.keychain-db"
+          KEYCHAIN_PASSWORD="$(openssl rand -base64 24)"
+          echo "::add-mask::$KEYCHAIN_PASSWORD"
+
+          echo "$MACOS_CERTIFICATE_P12" | base64 --decode > "$RUNNER_TEMP/certificate.p12"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security import "$RUNNER_TEMP/certificate.p12" -P "$MACOS_CERTIFICATE_PASSWORD" \
+            -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s \
+            -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH" > /dev/null
+          security list-keychains -d user -s "$KEYCHAIN_PATH" login.keychain-db
+          security default-keychain -s "$KEYCHAIN_PATH"
+          rm -f "$RUNNER_TEMP/certificate.p12"
+
+          # Use the certificate hash, not the name, so no name guessing is needed.
+          IDENTITY="$(security find-identity -v -p codesigning "$KEYCHAIN_PATH" \
+            | awk '/Developer ID Application/ {print $2; exit}')"
+          if [ -z "$IDENTITY" ]; then
+            echo "::error::No 'Developer ID Application' identity found in the .p12 file"
+            exit 1
+          fi
+
+          NOTARY_KEY_PATH="$RUNNER_TEMP/AuthKey_${NOTARY_KEY_ID}.p8"
+          echo "$NOTARY_KEY_P8" | base64 --decode > "$NOTARY_KEY_PATH"
+          chmod 600 "$NOTARY_KEY_PATH"
+
+          {
+            echo "KEYCHAIN_PATH=$KEYCHAIN_PATH"
+            echo "SIGN_IDENTITY=$IDENTITY"
+            echo "NOTARY_KEY_PATH=$NOTARY_KEY_PATH"
+          } >> "$GITHUB_ENV"
+
+      - name: Build and archive (unsigned)
+        if: env.SIGNED != 'true'
+        run: |
+          set -euo pipefail
+          mkdir -p "$WORK_DIR/stage" "$DIST_DIR"
+          # Ad-hoc signing ("-") keeps the entitlements and the hardened runtime flag
+          # from the project. The project's App Store identity and profile are cleared.
+          xcodebuild archive \
+            -project Tinge.xcodeproj \
+            -scheme "$SCHEME" \
+            -configuration Release \
+            -destination 'generic/platform=macOS' \
+            -archivePath "$WORK_DIR/$APP_NAME.xcarchive" \
+            MARKETING_VERSION="$VERSION" \
+            CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
+            CODE_SIGN_STYLE=Manual \
+            CODE_SIGN_IDENTITY="-" \
+            DEVELOPMENT_TEAM="" \
+            PROVISIONING_PROFILE_SPECIFIER="" \
+            CODE_SIGN_ENTITLEMENTS=tinge/tinge.entitlements
+          ditto "$WORK_DIR/$APP_NAME.xcarchive/Products/Applications/$APP_NAME.app" \
+            "$WORK_DIR/stage/$APP_NAME.app"
+
+      - name: Build and archive (Developer ID)
+        if: env.SIGNED == 'true'
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$WORK_DIR/stage" "$DIST_DIR"
+          xcodebuild archive \
+            -project Tinge.xcodeproj \
+            -scheme "$SCHEME" \
+            -configuration Release \
+            -destination 'generic/platform=macOS' \
+            -archivePath "$WORK_DIR/$APP_NAME.xcarchive" \
+            MARKETING_VERSION="$VERSION" \
+            CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
+            CODE_SIGN_STYLE=Manual \
+            CODE_SIGN_IDENTITY="$SIGN_IDENTITY" \
+            DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
+            PROVISIONING_PROFILE_SPECIFIER="" \
+            OTHER_CODE_SIGN_FLAGS="--keychain $KEYCHAIN_PATH --timestamp"
+
+          cat > "$WORK_DIR/ExportOptions.plist" <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key>
+            <string>developer-id</string>
+            <key>teamID</key>
+            <string>$APPLE_TEAM_ID</string>
+            <key>signingStyle</key>
+            <string>manual</string>
+            <key>signingCertificate</key>
+            <string>$SIGN_IDENTITY</string>
+          </dict>
+          </plist>
+          PLIST
+
+          xcodebuild -exportArchive \
+            -archivePath "$WORK_DIR/$APP_NAME.xcarchive" \
+            -exportPath "$WORK_DIR/export" \
+            -exportOptionsPlist "$WORK_DIR/ExportOptions.plist"
+          ditto "$WORK_DIR/export/$APP_NAME.app" "$WORK_DIR/stage/$APP_NAME.app"
+
+      - name: Notarize and staple app
+        if: env.SIGNED == 'true'
+        env:
+          NOTARY_KEY_ID: ${{ secrets.NOTARY_KEY_ID }}
+          NOTARY_ISSUER_ID: ${{ secrets.NOTARY_ISSUER_ID }}
+        run: |
+          set -euo pipefail
+          ditto -c -k --keepParent "$WORK_DIR/stage/$APP_NAME.app" "$WORK_DIR/notarize-app.zip"
+          xcrun notarytool submit "$WORK_DIR/notarize-app.zip" \
+            --key "$NOTARY_KEY_PATH" --key-id "$NOTARY_KEY_ID" --issuer "$NOTARY_ISSUER_ID" \
+            --wait --output-format json > "$WORK_DIR/notary-app.json"
+          cat "$WORK_DIR/notary-app.json"
+          STATUS="$(/usr/bin/plutil -extract status raw -o - "$WORK_DIR/notary-app.json")"
+          if [ "$STATUS" != "Accepted" ]; then
+            ID="$(/usr/bin/plutil -extract id raw -o - "$WORK_DIR/notary-app.json")"
+            xcrun notarytool log "$ID" \
+              --key "$NOTARY_KEY_PATH" --key-id "$NOTARY_KEY_ID" --issuer "$NOTARY_ISSUER_ID" || true
+            echo "::error::Notarization of the app finished with status $STATUS"
+            exit 1
+          fi
+          xcrun stapler staple "$WORK_DIR/stage/$APP_NAME.app"
+          xcrun stapler validate "$WORK_DIR/stage/$APP_NAME.app"
+
+      - name: Create DMG and zip
+        run: |
+          set -euo pipefail
+          mkdir -p "$DIST_DIR"
+          APP="$WORK_DIR/stage/$APP_NAME.app"
+
+          # DMG: Tinge.app plus a link to /Applications
+          DMG_SRC="$WORK_DIR/dmg-src"
+          rm -rf "$DMG_SRC"
+          mkdir -p "$DMG_SRC"
+          ditto "$APP" "$DMG_SRC/$APP_NAME.app"
+          ln -s /Applications "$DMG_SRC/Applications"
+          hdiutil create \
+            -volname "$APP_NAME" \
+            -srcfolder "$DMG_SRC" \
+            -fs HFS+ \
+            -format UDZO \
+            -ov \
+            "$DIST_DIR/$APP_NAME-$VERSION.dmg"
+
+          # Zip: made with ditto so signatures, symlinks and attributes stay intact
+          ditto -c -k --keepParent "$APP" "$DIST_DIR/$APP_NAME-$VERSION.zip"
+          ls -l "$DIST_DIR"
+
+      - name: Sign, notarize and staple DMG
+        if: env.SIGNED == 'true'
+        env:
+          NOTARY_KEY_ID: ${{ secrets.NOTARY_KEY_ID }}
+          NOTARY_ISSUER_ID: ${{ secrets.NOTARY_ISSUER_ID }}
+        run: |
+          set -euo pipefail
+          DMG="$DIST_DIR/$APP_NAME-$VERSION.dmg"
+          codesign --force --sign "$SIGN_IDENTITY" --keychain "$KEYCHAIN_PATH" --timestamp "$DMG"
+          xcrun notarytool submit "$DMG" \
+            --key "$NOTARY_KEY_PATH" --key-id "$NOTARY_KEY_ID" --issuer "$NOTARY_ISSUER_ID" \
+            --wait --output-format json > "$WORK_DIR/notary-dmg.json"
+          cat "$WORK_DIR/notary-dmg.json"
+          STATUS="$(/usr/bin/plutil -extract status raw -o - "$WORK_DIR/notary-dmg.json")"
+          if [ "$STATUS" != "Accepted" ]; then
+            ID="$(/usr/bin/plutil -extract id raw -o - "$WORK_DIR/notary-dmg.json")"
+            xcrun notarytool log "$ID" \
+              --key "$NOTARY_KEY_PATH" --key-id "$NOTARY_KEY_ID" --issuer "$NOTARY_ISSUER_ID" || true
+            echo "::error::Notarization of the DMG finished with status $STATUS"
+            exit 1
+          fi
+          xcrun stapler staple "$DMG"
+          xcrun stapler validate "$DMG"
+
+      - name: Verify app and write checksums
+        run: |
+          set -euo pipefail
+          APP="$WORK_DIR/stage/$APP_NAME.app"
+          codesign --verify --deep --strict --verbose=2 "$APP"
+          codesign -d --entitlements - "$APP" 2>&1 | grep -E "app-sandbox|network.client|user-selected" || true
+          echo "Info.plist: $(/usr/bin/plutil -extract CFBundleShortVersionString raw "$APP/Contents/Info.plist")" \
+            "($(/usr/bin/plutil -extract CFBundleVersion raw "$APP/Contents/Info.plist"))"
+          if [ "$SIGNED" = true ]; then
+            spctl --assess --type execute --verbose=2 "$APP"
+          fi
+          cd "$DIST_DIR"
+          shasum -a 256 "$APP_NAME-$VERSION.dmg" "$APP_NAME-$VERSION.zip" > "$APP_NAME-$VERSION-SHA256SUMS.txt"
+          cat "$APP_NAME-$VERSION-SHA256SUMS.txt"
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Tinge-${{ env.VERSION }}-build${{ env.BUILD_NUMBER }}
+          path: ${{ env.DIST_DIR }}/*
+          if-no-files-found: error
+
+      - name: Create GitHub Release
+        if: github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          NOTES="$WORK_DIR/release-notes.md"
+          if [ "$SIGNED" = true ]; then
+            cat > "$NOTES" <<'TXT'
+          Signed with a Developer ID certificate and notarized by Apple. Open the DMG and drag Tinge to Applications.
+          TXT
+          else
+            cat > "$NOTES" <<'TXT'
+          **This build is not signed or notarized.** macOS will block it on first start.
+
+          To open it, do one of these:
+
+          - Move Tinge to Applications, then right-click Tinge and choose **Open**. Click **Open** again in the dialog.
+          - Or run this command in Terminal:
+
+            ```
+            xattr -dr com.apple.quarantine /Applications/Tinge.app
+            ```
+          TXT
+          fi
+
+          # A version like 1.2.0-rc1 is published as a pre-release.
+          PRERELEASE=""
+          case "$VERSION" in *-*) PRERELEASE="--prerelease" ;; esac
+
+          gh release create "$TAG" \
+            --verify-tag \
+            --title "Tinge $VERSION" \
+            --notes-file "$NOTES" \
+            --generate-notes \
+            $PRERELEASE \
+            "$DIST_DIR/$APP_NAME-$VERSION.dmg" \
+            "$DIST_DIR/$APP_NAME-$VERSION.zip" \
+            "$DIST_DIR/$APP_NAME-$VERSION-SHA256SUMS.txt"
+
+      - name: Clean up keychain and keys
+        if: always()
+        run: |
+          if [ -n "${KEYCHAIN_PATH:-}" ]; then
+            security delete-keychain "$KEYCHAIN_PATH" || true
+            security list-keychains -d user -s login.keychain-db || true
+            security default-keychain -s login.keychain-db || true
+          fi
+          rm -f "$RUNNER_TEMP"/AuthKey_*.p8 "$RUNNER_TEMP/certificate.p12"
