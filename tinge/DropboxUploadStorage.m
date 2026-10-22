@@ -165,34 +165,29 @@
 -(NSString*) responeLinkFromResponse:(NSData*) response {
     if (nil==response)
         return @"Empty response";
-    
-    NSString *s=[[NSString alloc] initWithData:response
-                                             encoding:NSUTF8StringEncoding];
 
-    if (nil==s)
-        return @" Empty response";
-
-    NSRange r=[s rangeOfString:@"\"http"];
-    if (r.location==NSNotFound)
+    NSDictionary *json=[NSJSONSerialization JSONObjectWithData:response options:0 error:nil];
+    NSString *link=[json isKindOfClass:[NSDictionary class]] ? [json objectForKey:@"url"] : nil;
+    if (![link isKindOfClass:[NSString class]])
         return @"No URL";
-    s=[s substringFromIndex:r.location+1];
-    r=[s rangeOfString:@"\""];
-    if (r.location==NSNotFound)
-        return @"URL malformed";
-    s=[s substringToIndex:r.location];
-    if ([DropboxUploadStorage directLink]){
-        r=[s rangeOfString:@"www.dropbox."];
-        if (r.location!=NSNotFound){
-            s=[s stringByReplacingOccurrencesOfString:@"www.dropbox." withString:@"dl.dropboxusercontent."];
-            r=[s rangeOfString:@"?"];
-            if (r.location!=NSNotFound){
-                s=[s substringToIndex:r.location];
-            }
-        }else{
-            NSLog(@"Can't get direct Dropbox link from %@",s);
-        }
+    if (![DropboxUploadStorage directLink])
+        return link;
+
+    /* Shared links carry a required rlkey parameter; keep the query and ask for the raw file
+       (raw=1 shows the image inline, dl=0 would open the Dropbox preview page). */
+    NSURLComponents *components=[NSURLComponents componentsWithString:link];
+    if (components==nil){
+        NSLog(@"Can't get direct Dropbox link from %@",link);
+        return link;
     }
-    return s;
+    NSMutableArray *items=[NSMutableArray array];
+    for (NSURLQueryItem *item in components.queryItems){
+        if (![item.name isEqualToString:@"dl"] && ![item.name isEqualToString:@"raw"])
+            [items addObject:item];
+    }
+    [items addObject:[NSURLQueryItem queryItemWithName:@"raw" value:@"1"]];
+    components.queryItems=items;
+    return components.URL.absoluteString;
 }
 
 //leading space == error
